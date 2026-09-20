@@ -2,8 +2,6 @@
 
 [![Language](https://img.shields.io/badge/Language-C%2B%2B11-blue.svg)](https://isocpp.org/)
 [![Cryptography](https://img.shields.io/badge/Library-OpenSSL-green.svg)](https://www.openssl.org/)
-[![Architecture](https://img.shields.io/badge/Architecture-Client--Server-orange.svg)]()
-[![University](https://img.shields.io/badge/University-Pisa-red.svg)](https://www.unipi.it/)
 
 [Specifications](Specifications.pdf) | [Technical Report](Report.pdf) | [Source Code](src/)
 
@@ -66,7 +64,7 @@ Once a secure authenticated channel is established, the client provides an inter
 ├── signatures/         Directory where generated signatures are stored
 ├── makefile            Build system configuration
 ├── Specifications.pdf  Official course project specifications
-└── Report.pdf          Final technical report detailing protocol design
+└── Report.pdf          Final technical report detailing protocol design and implementation
 ```
 
 ---
