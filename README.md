@@ -1,114 +1,127 @@
-# Digital Signature Server (DSS)
+# FoC - Digital Signature Server
 
-## Project Information
+[![Language](https://img.shields.io/badge/Language-C%2B%2B11-blue.svg)](https://isocpp.org/)
+[![Cryptography](https://img.shields.io/badge/Library-OpenSSL-green.svg)](https://www.openssl.org/)
+[![Architecture](https://img.shields.io/badge/Architecture-Client--Server-orange.svg)]()
+[![University](https://img.shields.io/badge/University-Pisa-red.svg)](https://www.unipi.it/)
 
-- **Course**: Foundations of Cybersecurity (FoC) A.Y. 2024-2025
-- **Degree Program**: Master of Science in Computer Engineering
-- **Institution**: University of Pisa
-- **Author**: Dario Bandecchi
+[Specifications](Specifications.pdf) | [Technical Report](Report.pdf) | [Source Code](src/)
 
-## General Overview
+This repository contains the design, implementation, and security verification of a **Digital Signature Server (DSS)** using a C++ Client-Server architecture and the OpenSSL cryptographic library.
 
-This repository contains the implementation of a **Digital Signature Server (DSS)** based on a Client-Server architecture written in C++ using the OpenSSL library.
+The project was developed for the **Foundations of Cybersecurity** course (Master of Science in Computer Engineering, **Università di Pisa**).
 
-The server acts as a central Trusted Third Party (TTP) for an organization, enabling registered employees to:
-- Securely generate and store RSA asymmetric key pairs.
-- Digitally sign organizational documents.
-- Retrieve public keys of other registered users to verify signatures.
-- Revoke and delete their own key pairs.
+---
 
-All client-server communications are conducted over a secure channel that guarantees mutual authentication, confidentiality, integrity, and Perfect Forward Secrecy (PFS).
+## Project Overview
 
-## Security Architecture and Cryptographic Design
+The Digital Signature Server acts as a central **Trusted Third Party (TTP)** for an organization. It allows registered employees to securely generate, store, and manage RSA public-private key pairs, digitally sign organizational documents, retrieve public keys of colleagues, and revoke key pairs.
 
-- **Authentication and Handshake**:
-  - Ephemeral Diffie-Hellman key exchange ensuring Perfect Forward Secrecy (PFS).
-  - Mutual authentication using user credentials and the server's pre-generated RSA key/certificate.
-  - Protection against replay attacks using 128-bit pseudo-random nonces per session.
-- **Credential Protection**:
-  - User passwords are stored as hashes derived via **PBKDF2-HMAC-SHA256** using a 16-byte random salt and 100,000 iterations.
-- **Channel Encryption (Session Key)**:
-  - **AES-128-GCM** authenticated encryption for commands and responses.
-  - Per-message protection using unique Initialization Vectors (IV) and 16-byte authentication tags.
-- **RSA Key Management**:
-  - Generation of RSA-3072 bit keys with public exponent 65537.
-  - Storage of user private keys on the server in encrypted PEM format.
+All communication between client and server takes place over a custom authenticated and encrypted transport protocol that guarantees:
+- **Mutual Authentication**: Server authentication via RSA certificate/key and client authentication via PBKDF2-derived user credentials.
+- **Perfect Forward Secrecy (PFS)**: Established using Ephemeral Diffie-Hellman key exchange.
+- **Confidentiality & Integrity**: Authenticated encryption via AES-128-GCM with per-message IV and 16-byte authentication tags.
+- **Replay Attack Mitigation**: Session-bound 128-bit pseudo-random nonces.
 
-## Client Features and Commands
+---
 
-After establishing a secure connection with the server, authenticated users can invoke the following commands:
+## Cryptographic Parameters & Protocol Specifications
 
-1. `CreateKeys`: Generates and securely stores an RSA key pair on the server for the requesting user.
-2. `SignDoc <filepath>`: Transmits a document to the server to obtain an RSA digital signature.
-3. `GetPublicKey <username>`: Fetches the public key of a specific registered user.
-4. `DeleteKeys`: Revokes and deletes the user's RSA key pair from the server.
-5. `Stop`: Terminates the session and disconnects from the server cleanly.
+| Security Primitive | Algorithm / Parameter | Details / Specification |
+| :--- | :---: | :--- |
+| **Session Key Exchange** | Ephemeral Diffie-Hellman | PFS enabled per session |
+| **Symmetric Encryption** | AES-128-GCM | 128-bit key, 12-byte IV, 16-byte Tag |
+| **Digital Signatures** | RSA-3072 | SHA-256 digest, public exponent $e = 65537$ |
+| **Key Storage** | Encrypted PEM | Private keys encrypted at rest on server |
+| **Password Derivation** | PBKDF2-HMAC-SHA256 | 16-byte random salt, 100,000 iterations |
+| **Replay Protection** | 128-bit Nonce | Pseudo-random nonce per transaction |
+
+---
+
+## System Architecture & Client Commands
+
+Once a secure authenticated channel is established, the client provides an interactive menu supporting five core operations:
+
+| Command | Syntax | Description |
+| :--- | :--- | :--- |
+| **CreateKeys** | `CreateKeys` | Generates a new RSA-3072 key pair for the user and stores it encrypted on the server |
+| **SignDoc** | `SignDoc <filepath>` | Sends a document to the server to compute and receive its RSA digital signature |
+| **GetPublicKey** | `GetPublicKey <username>` | Fetches and locally saves the public key of any registered network user |
+| **DeleteKeys** | `DeleteKeys` | Revokes and deletes the RSA key pair associated with the requesting user |
+| **Stop** | `Stop` | Terminates session and disconnects cleanly from the server |
+
+---
 
 ## Repository Structure
 
 ```
 .
-├── src/                C++ source files (client.cpp, server.cpp, utils.cpp)
+├── src/                C++ source code (client.cpp, server.cpp, utils.cpp)
 ├── include/            C++ header files (constants.hpp, utils.hpp)
 ├── scripts/            Utility scripts (exec.sh, generate_users.py)
-├── data/               User credentials database and revocation list (users.txt, revoked.txt)
+├── data/               Database files (users.txt, revoked.txt)
 ├── documents/          Sample documents for signature testing (document.txt)
-├── keys/               DH parameters and RSA keys for server and registered users
-├── public_keys/        Directory where fetched public keys are saved locally by clients
-├── signatures/         Directory where generated digital signature files are stored
-├── makefile            Build configuration file
-├── Specifications.pdf  Official project specifications and requirements
-└── Report.pdf          Final project report detailing system design and cryptographic choices
+├── keys/               DH parameters (dhparam.pem) and server RSA keys
+├── public_keys/        Directory where fetched public keys are stored locally
+├── signatures/         Directory where generated signatures are stored
+├── makefile            Build system configuration
+├── Specifications.pdf  Official course project specifications
+└── Report.pdf          Final technical report detailing protocol design
 ```
 
-## System Requirements and Dependencies
+---
 
-- **Operating System**: Linux / macOS / WSL
-- **Compiler**: `g++` (supporting C++11 or higher)
+## Requirements & Compilation
+
+### Prerequisites
+
+- **Compiler**: `g++` with C++11 or higher support
 - **Libraries**: OpenSSL (`libssl-dev`, `libcrypto`)
 - **Tools**: `make`, `python3`
 
-## Building and Running
+### Building the Project
 
-### 1. Compilation
-
-To compile both client and server binaries:
+Compile client and server executables:
 
 ```bash
 make
 ```
 
-To clean compiled object files and executables:
+Clean object files and binaries:
 
 ```bash
 make clean
 ```
 
-### 2. User Generation (Optional)
+---
 
-To regenerate the sample user database (`data/users.txt`) with PBKDF2 hashes:
+## Execution Guide
+
+### 1. Generating User Credentials (Optional)
+
+To regenerate `data/users.txt` with PBKDF2 salt and password hashes:
 
 ```bash
 python3 scripts/generate_users.py
 ```
 
-### 3. Running the Server
+### 2. Starting the Server
 
-Start the server by passing the listening port (e.g., 4242):
+Run the server executable by passing the listening port (e.g., 4242):
 
 ```bash
 ./server 4242
 ```
 
-### 4. Running the Client
+### 3. Starting the Client
 
-In a separate terminal window, start the client application:
+In a separate terminal window:
 
 ```bash
 ./client
 ```
 
-Alternatively, on Linux systems with `gnome-terminal`, you can run the automated execution script:
+Alternatively, on Linux systems with `gnome-terminal`:
 
 ```bash
 bash scripts/exec.sh
