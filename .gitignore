@@ -1,0 +1,16 @@
+# Compilation outputs and executables
+src/*.o
+*.o
+client
+server
+
+# Runtime output artifacts generated during client operations
+public_keys/*
+!public_keys/.gitkeep
+signatures/*
+!signatures/.gitkeep
+
+# Temporary and system files
+.DS_Store
+*.swp
+*.tmp
